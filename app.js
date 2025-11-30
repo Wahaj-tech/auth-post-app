@@ -88,31 +88,60 @@ app.post('/register',async (req,res)=>{
 app.get('/login',(req,res)=>{
     res.render('login');
 })
-app.post('/login',async(req,res)=>{
-    let{email,password}=req.body;
-    let user=await userModel.findOne({email});
-    if(!user){
-        req.flash("error","something went wrong");
+// app.post('/login',async(req,res)=>{
+//     let{email,password}=req.body;
+//     let user=await userModel.findOne({email});
+//     if(!user){
+//         req.flash("error","something went wrong");
+//         return res.redirect('/login');
+//     }
+//     bcrypt.compare(password,user.password,(err,result)=>{//password woh h joh user n daala h and user.password wo h joh DB m save h.
+//         if(!result){
+//             req.flash("error","Wrong email or password");
+//             return res.redirect('/login');
+//         }
+//         req.flash("success","You are logged in!");
+//         let token = jwt.sign({email:email,userid:user._id}, 'shhhhh');
+//         res.cookie("token",token);
+//         return res.redirect('/profile');  // IMPORTANT !!!
+//     })
+// })
+
+app.post('/login', async (req, res) => {
+    let { email, password } = req.body;
+
+    let user = await userModel.findOne({ email });
+    if (!user) {
+        req.flash("error", "something went wrong");
         return res.redirect('/login');
     }
-    bcrypt.compare(password,user.password,(err,result)=>{//password woh h joh user n daala h and user.password wo h joh DB m save h.
-        if(!result){
-            req.flash("error","Wrong email or password");
+
+    bcrypt.compare(password, user.password, (err, result) => {
+        if (!result) {
+            req.flash("error", "Wrong email or password");
             return res.redirect('/login');
         }
-        req.flash("success","You are logged in!");
-        let token = jwt.sign({email:email,userid:user._id}, 'shhhhh');
-        res.cookie("token",token);
-        return res.redirect('/profile');  // IMPORTANT !!!
-    })
-})
 
-//making logout page--->
-app.get('/logout',(req,res)=>{ //when we write /logout in browser then our cookie get empty and we get logout
-    res.cookie("token","");
-    res.redirect("/login");
-})
+        req.flash("success", "You are logged in!");
 
+        let token = jwt.sign({ email: email, userid: user._id }, "shhhhh");
+        res.cookie("token", token);
+
+        // Instead of redirect → show a page that sets sessionStorage
+        return res.render("setSession");
+    });
+});
+
+// //making logout page--->
+// app.get('/logout',(req,res)=>{ //when we write /logout in browser then our cookie get empty and we get logout
+//     res.cookie("token","");
+//     res.redirect("/login");
+// })
+
+app.get('/logout', (req, res) => {
+    res.cookie("token", "");
+    res.render("clearSession");
+});
 
 //making protected route through middleware--->
 app.get('/profile',isLoggedIn,async (req,res)=>{
@@ -196,3 +225,6 @@ app.listen(3000);
 //    },
 //    content: "hello"
 // }
+
+
+

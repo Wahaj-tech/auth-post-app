@@ -30,4 +30,11 @@
         <% } %>
     </div>
 </body>
+<script>
+    // If token cookie exists, redirect to profile automatically
+    if (sessionStorage.getItem("loggedIn") === "true") {
+        window.location.href = "/profile";
+    }
+</script>
+
 </html>
