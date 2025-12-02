@@ -11,7 +11,12 @@
         <div class="w-full flex justify-end">
             <a href="/logout" class="p-2 bg-red-600 mb-6 inline-block rounded-md">LOG OUT</a>
         </div>
-        <h1 class="text-3xl"><span class="font-light">Hello, </span><%=user.name%></h1>
+        <div class="flex gap-3 items-center">
+            <div class="w-20 h-20 ">
+                <img class="w-full h-full object-cover overflow-hidden rounded-lg" src="/images/uploads/<%=user.profilepic%>"><!--we must have to make image w-full h-full and object-covered and we have to locate where is our picture-> which is in /public/images/upload/default.png but in ejs we studied earlier  we dont write /public when we are importing css and js in ejs from public -->
+            </div>
+            <h1 class="text-3xl"><span class="font-light">Hello, </span><%=user.name%></h1>
+        </div>
         <h5>you can create a new post</h5>
         
         <form action="/post" method="post">

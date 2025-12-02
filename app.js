@@ -3,6 +3,8 @@
 //npm i bcrypt jsonwebtoken cookie-parser
 //npm i ejs
 //npm i express-session connect-flash
+//npm i multer
+
 
 //what we'll do--->
 //user post likh payenge
@@ -21,6 +23,11 @@ const postModel=require('./models/post');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt=require('bcrypt');
+const path=require('path')
+const crypto=require('crypto');//already in nodejs no need to install anything used for giving random name to file in multer part
+//Multer -->goto npm and search multer which is used to add file ,photo as data and read documentation must
+const multer  = require('multer')
+
 
 //Flash messages are temporary messages stored in the session.
 //They last only for one request, and disappear after being displayed.
@@ -32,6 +39,7 @@ const flash=require('connect-flash');
 app.set("view engine","ejs");
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
+app.use(express.static(path.join(__dirname,'public')));
 app.use(cookieParser())
 //add session after cookie parser always
 app.use(session({
@@ -52,6 +60,37 @@ res.locals is a special object.
 Anything you put in it becomes available to every EJS template without manually passing data in res.render().that is res.render("index", { success: req.flash("success") });
  */
 
+//goto multer in npm and scroll down to disk storage and paste the code in vs code and edit some thing from the code-->
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, '/tmp/my-uploads')
+//   },
+//   filename: function (req, file, cb) {
+//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+//     cb(null, file.fieldname + '-' + uniqueSuffix)
+//   }
+// })
+
+// const upload = multer({ storage: storage })
+
+
+//we have to do some changes in disk storage wala code
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './public/images/uploads')//giving location of folder jaha p file save hongi 
+  },
+  //let's say user A n abc.jpg file upload ki and userB n bhi abc.jpg file upload ki toh abb uploads folder m do file same name seh toh nhi ho skti issiliye user B k file joh baad m upload hua woh user A k file ko overwrite krr dega which we don't want thats why we make every file with some random hexadecimal file name
+  filename: function (req, file, cb) {//file k andrr file k poora data h that is file origial name(when uploaded) encoding etc
+    crypto.randomBytes(12,(err,bytes)=>{
+        //in bytes we get buffer of 12 character which we convert it into hexadecimal & cb function sets fileName
+        const fn=bytes.toString("hex")+path.extname(file.originalname);//byte buffer to hexadecimal which give random name and path.extname give extension of uploaded file (original name is a feild of object file which contain the name of file when uploaded eg:abc.jpg)
+        cb(null,fn);
+    })
+    
+  }
+})
+
+const upload = multer({ storage: storage })//used this upload variable jaha p hmari file upload ho rhi h and waha upload.single("name") laga dena that's it
 
 
 
@@ -205,6 +244,26 @@ app.get('/edit/:id',isLoggedIn,async(req,res)=>{
 app.post('/update/:id',isLoggedIn,async(req,res)=>{
     let post=await postModel.findOneAndUpdate({_id:req.params.id},{content:req.body.content})
     res.redirect('/profile')
+})
+
+//uploading file through multer-->
+app.get('/upload',(req,res)=>{
+    res.render('multer');
+    
+})
+//for uploading file must add upload.single() middleware otherwise if we do req.file which store file gives undefined
+app.post('/uploadFile',isLoggedIn,upload.single("image"),async(req,res)=>{//image was the name of input file tag 
+    //if we do console.log(req.body);we'll get {} as otpt so the question hmari file joh hmne upload ki thi woh kaha h ,so the thing is multer 'req' argument m do cheez add krta h body object and file object 
+    // req.files is array of `photos/any file` files
+    // req.body will contain the text fields, if there were any
+    //so hmari file req.file m hogi na ki req.body
+    console.log(req.file);
+
+    //getting which user is uploading through isLoggedIn(we can get user in any route by just putting isLoogedIn as middleware and we'll get req.user)
+    let user=await userModel.findOne({email:req.user.email});
+    user.profilepic=req.file.filename;//as our profilepic feild type is String in user.js data base ,so thhat's why we have to give filename
+    await user.save();
+    res.redirect('/profile');
 })
 
 app.listen(3000);
